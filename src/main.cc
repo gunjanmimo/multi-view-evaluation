@@ -132,8 +132,8 @@ int main(int argc, char** argv) {
   }
 
   // Load the reconstruction point cloud.
-  std::cout << "Loading reconstruction: " << reconstruction_ply_path
-            << std::endl;
+  // std::cout << "Loading reconstruction: " << reconstruction_ply_path
+  //           << std::endl;
   PointCloudPtr reconstruction(new PointCloud());
   if (pcl::io::loadPLYFile(reconstruction_ply_path, *reconstruction) < 0) {
     std::cerr << "Cannot read reconstruction file." << std::endl;
@@ -151,7 +151,7 @@ int main(int argc, char** argv) {
                scan_info.filename)
                   .string();
 
-    std::cout << "Loading scan: " << file_path << std::endl;
+    // std::cout << "Loading scan: " << file_path << std::endl;
     PointCloudPtr point_cloud(new PointCloud());
     if (pcl::io::loadPLYFile(file_path, *point_cloud) < 0) {
       std::cerr << "Cannot read scan file." << std::endl;
