@@ -36,19 +36,26 @@
 #include "meshlab_project.h"
 #include "util.h"
 
+// INCLUDES TO WRITE DATA INTO TEXT FILE
+#include <iostream>
+#include <fstream>
+#include <string>
+
 const float kDegToRadFactor = M_PI / 180.0;
 
 // Return codes of the program:
 // 0: Success.
 // 1: System failure (e.g., due to wrong parameters given).
 // 2: Reconstruction file input failure (PLY file cannot be found or read).
-enum class ReturnCodes {
+enum class ReturnCodes
+{
   kSuccess = 0,
   kSystemFailure = 1,
   kReconstructionFileInputFailure = 2
 };
 
-int main(int argc, char** argv) {
+int main(int argc, char **argv)
+{
   pcl::console::setVerbosityLevel(pcl::console::L_ALWAYS);
 
   // Parse arguments.
@@ -77,29 +84,35 @@ int main(int argc, char** argv) {
 
   // Validate arguments.
   std::stringstream errors;
-  if (tolerances.empty()) {
+  if (tolerances.empty())
+  {
     errors << "The --tolerances parameter must be given as a list of"
            << " non-negative evaluation tolerance values, separated by"
            << " commas." << std::endl;
   }
-  if (reconstruction_ply_path.empty()) {
+  if (reconstruction_ply_path.empty())
+  {
     errors << "The --reconstruction_ply_path parameter must be given."
            << std::endl;
   }
-  if (ground_truth_mlp_path.empty()) {
+  if (ground_truth_mlp_path.empty())
+  {
     errors << "The --ground_truth_mlp_path parameter must be given."
            << std::endl;
   }
-  if (voxel_size <= 0.f) {
+  if (voxel_size <= 0.f)
+  {
     errors << "The voxel size must be positive." << std::endl;
   }
 
-  if (!errors.str().empty()) {
+  if (!errors.str().empty())
+  {
     std::cerr << "Usage example: " << argv[0]
               << " --tolerances 0.1,0.2 --reconstruction_ply_path "
                  "path/to/reconstruction.ply --ground_truth_mlp_path "
                  "path/to/ground-truth.mlp"
-              << std::endl << std::endl;
+              << std::endl
+              << std::endl;
     std::cerr << errors.str() << std::endl;
     return static_cast<int>(ReturnCodes::kSystemFailure);
   }
@@ -112,7 +125,8 @@ int main(int argc, char** argv) {
 
   // Load the ground truth point cloud poses from the MeshLab project file.
   MeshLabMeshInfoVector scan_infos;
-  if (!ReadMeshLabProject(ground_truth_mlp_path, &scan_infos)) {
+  if (!ReadMeshLabProject(ground_truth_mlp_path, &scan_infos))
+  {
     std::cerr << "Cannot read scan poses from " << ground_truth_mlp_path
               << std::endl;
     return static_cast<int>(ReturnCodes::kSystemFailure);
@@ -120,10 +134,12 @@ int main(int argc, char** argv) {
 
   // Validate the scan transformations (partly: not checking that the top-left
   // 3x3 block is a rotation matrix).
-  for (size_t scan_index = 0; scan_index < scan_infos.size(); ++scan_index) {
-    const MeshLabProjectMeshInfo& info = scan_infos[scan_index];
+  for (size_t scan_index = 0; scan_index < scan_infos.size(); ++scan_index)
+  {
+    const MeshLabProjectMeshInfo &info = scan_infos[scan_index];
     if (info.global_T_mesh(3, 0) != 0 || info.global_T_mesh(3, 1) != 0 ||
-        info.global_T_mesh(3, 2) != 0 || info.global_T_mesh(3, 3) != 1) {
+        info.global_T_mesh(3, 2) != 0 || info.global_T_mesh(3, 3) != 1)
+    {
       std::cerr << "Error: Last row in a scan's transformation matrix is not"
                    " (0, 0, 0, 1)."
                 << std::endl;
@@ -135,14 +151,16 @@ int main(int argc, char** argv) {
   // std::cout << "Loading reconstruction: " << reconstruction_ply_path
   //           << std::endl;
   PointCloudPtr reconstruction(new PointCloud());
-  if (pcl::io::loadPLYFile(reconstruction_ply_path, *reconstruction) < 0) {
+  if (pcl::io::loadPLYFile(reconstruction_ply_path, *reconstruction) < 0)
+  {
     std::cerr << "Cannot read reconstruction file." << std::endl;
     return static_cast<int>(ReturnCodes::kReconstructionFileInputFailure);
   }
 
   // Load the ground truth scan point clouds.
   std::vector<PointCloudPtr> scans;
-  for (const MeshLabProjectMeshInfo& scan_info : scan_infos) {
+  for (const MeshLabProjectMeshInfo &scan_info : scan_infos)
+  {
     // Get absolute or compose relative path.
     std::string file_path =
         (scan_info.filename.empty() || scan_info.filename[0] == '/')
@@ -153,7 +171,8 @@ int main(int argc, char** argv) {
 
     // std::cout << "Loading scan: " << file_path << std::endl;
     PointCloudPtr point_cloud(new PointCloud());
-    if (pcl::io::loadPLYFile(file_path, *point_cloud) < 0) {
+    if (pcl::io::loadPLYFile(file_path, *point_cloud) < 0)
+    {
       std::cerr << "Cannot read scan file." << std::endl;
       return static_cast<int>(ReturnCodes::kSystemFailure);
     }
@@ -174,7 +193,8 @@ int main(int argc, char** argv) {
                       output_point_completeness ? &point_is_complete : nullptr);
 
   // Write completeness visualization, if requested.
-  if (output_point_completeness) {
+  if (output_point_completeness)
+  {
     boost::filesystem::create_directories(
         boost::filesystem::path(completeness_cloud_output_path).parent_path());
     WriteCompletenessVisualization(completeness_cloud_output_path, scan_infos,
@@ -195,7 +215,8 @@ int main(int argc, char** argv) {
                   output_point_accuracy ? &point_is_accurate : nullptr);
 
   // Write accuracy visualization, if requested.
-  if (output_point_accuracy) {
+  if (output_point_accuracy)
+  {
     boost::filesystem::create_directories(
         boost::filesystem::path(accuracy_cloud_output_path).parent_path());
     WriteAccuracyVisualization(accuracy_cloud_output_path, *reconstruction,
@@ -203,52 +224,109 @@ int main(int argc, char** argv) {
   }
 
   // Output results.
+
+  /*
+
+  TODO: SAVE THE OUTPUT IN A PARSABLE TEXT FILE
+
+ LINE 1: TOLERANCE VALUE
+ LINE 2: COMPLETENESS VALUE
+ LINE 3: ACCURACY VALUE
+ LINE 4: F1-SCORE VALUE
+  */
+
+  fstream Data;
+  Data.open("OUTPUT.txt", ios::in);
+
   std::cout << "Tolerances: ";
   for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
-       ++tolerance_index) {
+       ++tolerance_index)
+  {
     std::cout << tolerances[tolerance_index];
-    if (tolerance_index < tolerances.size() - 1) {
+    if (tolerance_index < tolerances.size() - 1)
+    {
       std::cout << " ";
     }
   }
   std::cout << std::endl;
+
+  // TODO: APPEND TOLERANCE THE DATA TO THE FILE
+  for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
+       ++tolerance_index)
+  {
+    Data << tolerances[tolerance_index] << endl;
+  }
 
   std::cout << "Completenesses: ";
   for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
-       ++tolerance_index) {
+       ++tolerance_index)
+  {
     std::cout << completeness_results[tolerance_index];
-    if (tolerance_index < tolerances.size() - 1) {
+    if (tolerance_index < tolerances.size() - 1)
+    {
       std::cout << " ";
     }
   }
   std::cout << std::endl;
 
+  // TODO: APPEND COMPLETENESS THE DATA TO THE FILE
+  for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
+       ++tolerance_index)
+  {
+    Data << completeness_results[tolerance_index] << endl;
+  }
+
   std::cout << "Accuracies: ";
   for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
-       ++tolerance_index) {
+       ++tolerance_index)
+  {
     std::cout << accuracy_results[tolerance_index];
-    if (tolerance_index < tolerances.size() - 1) {
+    if (tolerance_index < tolerances.size() - 1)
+    {
       std::cout << " ";
     }
   }
   std::cout << std::endl;
+
+  // TODO: APPEND ACCURACY THE DATA TO THE FILE
+  for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
+       ++tolerance_index)
+  {
+    Data << accuracy_results[tolerance_index] << endl;
+  }
 
   // Balanced F-score putting the same weight on accuracy and completeness, see:
   // https://en.wikipedia.org/wiki/F1_score
   std::cout << "F1-scores: ";
   for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
-       ++tolerance_index) {
+       ++tolerance_index)
+  {
     float precision = accuracy_results[tolerance_index];
     float recall = completeness_results[tolerance_index];
     float f1_score = (precision <= 0 && recall <= 0)
                          ? 0
                          : (2 * (precision * recall) / (precision + recall));
     std::cout << f1_score;
-    if (tolerance_index < tolerances.size() - 1) {
+    if (tolerance_index < tolerances.size() - 1)
+    {
       std::cout << " ";
     }
   }
   std::cout << std::endl;
+
+  // TODO: APPEND F1-SCORE THE DATA TO THE FILE
+  for (size_t tolerance_index = 0; tolerance_index < tolerances.size();
+       ++tolerance_index)
+  {
+    float precision = accuracy_results[tolerance_index];
+    float recall = completeness_results[tolerance_index];
+    float f1_score = (precision <= 0 && recall <= 0)
+                         ? 0
+                         : (2 * (precision * recall) / (precision + recall));
+    Data << f1_score << endl;
+  }
+
+  Data.close();
 
   return static_cast<int>(ReturnCodes::kSuccess);
 }
